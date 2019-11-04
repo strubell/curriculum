@@ -27,7 +27,7 @@ case class TrieWordCounter() {
   protected val rootNode: TrieWordCounter.TrieNode = TrieWordCounter.TrieNode()
 
 //  protected val garbToken = "[GARB:TOO_LONG]"
-  protected val maxWordLen = 100
+  protected val maxWordLen = 50
   protected var longWordSkipCount = 0
   protected var maxRecordedWordLen = 0
 
