@@ -27,6 +27,8 @@ import scala.collection.mutable
 class SentenceScoreHistogram(val score: SentenceScore, val maxNumBins: Int) extends SummaryScore {
   protected var histogram: Histogram = Histogram(maxNumBins)
 
+  protected var skippedSentences = 0
+
   override def name: String = {
     s"$score.$maxNumBins.bins.histogram"
   }
@@ -41,8 +43,14 @@ class SentenceScoreHistogram(val score: SentenceScore, val maxNumBins: Int) exte
       requiredSummaries: Seq[SummaryScore]
   ): Unit = {
     val sentenceScore = score.processSentence(sentence, requiredValues, requiredSummaries)
+    if (sentenceScore == -1.0){
+      skippedSentences += 1
+      return
+    }
     histogram.insert(sentenceScore)
   }
+
+  override def report(): String = s"$name report: skipped sentences: $skippedSentences"
 
   def cdfScore: SentenceScore = {
     val histogramScore = this
@@ -64,7 +72,10 @@ class SentenceScoreHistogram(val score: SentenceScore, val maxNumBins: Int) exte
           requiredValues: Seq[Float],
           requiredSummaries: Seq[SummaryScore]
       ): Float = {
-        histogramScore.histogram.cdf(requiredValues.head).toFloat
+        val sentenceScore = requiredValues.head
+        if (sentenceScore == -1.0)
+          return sentenceScore
+        histogramScore.histogram.cdf(sentenceScore).toFloat
       }
     }
   }

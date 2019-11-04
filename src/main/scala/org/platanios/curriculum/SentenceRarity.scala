@@ -47,6 +47,8 @@ class SentenceRarity(
       else
         count
     })
+    if (counts.contains(-1.0))
+      return -1.toFloat
     val logFrequencies = counts.map(math.log(_) - logTotalCount)
     -wordFrequenciesPooling(ArraySeq.unsafeWrapArray(logFrequencies), logFrequencies = true).toFloat
   }
@@ -56,7 +58,7 @@ object SentenceRarity {
   // This is needed to avoid a deprecation message in Scala 2.13.
   implicit val order = Ordering.Double.IeeeOrdering
 
-  protected[SentenceRarity] val whitespaceRegex: Regex = "\\s+".r
+  protected[SentenceRarity] val whitespaceRegex: Regex = "\\p{Z}+".r
 
   def apply(
       wordFrequenciesPooling: WordFrequenciesPooling,

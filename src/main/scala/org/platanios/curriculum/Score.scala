@@ -49,6 +49,8 @@ trait SummaryScore extends Score {
   private[curriculum] def reset(): Unit = resetState()
   protected def resetState(): Unit
 
+  def report(): String
+
   def saveStateToFile(file: File): Unit
   def loadStateFromFile(file: File): Unit
 }
@@ -121,12 +123,18 @@ object Score {
             })
 
             // Update the summary score using all sentences.
-            newReader(file).lines().toAutoClosedIterator.zipWithIndex.foreach(sentence => {
+            newReader(file).lines().toAutoClosedIterator.zipWithIndex.foreach( sentence => {
+              if (sentence._1.strip() != ""){
               summaryScore.processSentence(
                 sentence = sentence._1,
                 requiredValues = requiredSentenceScores.map(_.apply(sentence._2)),
                 requiredSummaries = requiredSummaryScores)
+              }
+              else {
+                None
+              }
             })
+            logger.info(summaryScore.report())
           }
         } else {
           // Determine which scores need to be computed/re-computed.
@@ -179,6 +187,11 @@ object Score {
               val scoresFile = sentenceScoresDir / s"${file.name}.$score.score"
               val writer = newWriter(scoresFile)
               sentenceScores(score.toString).foreach(v => writer.write(s"$v\n"))
+//              sentenceScores(score.toString).foreach(v => {v match {
+//                case Some(v) => writer.write(s"$v\n")
+//                case None => writer.write("\n")
+//              }
+//              })
               writer.flush()
               writer.close()
               logger.info(s"Wrote sentence scores file '$scoresFile'.")

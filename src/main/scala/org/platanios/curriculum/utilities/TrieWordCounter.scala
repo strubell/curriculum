@@ -26,10 +26,41 @@ import scala.collection.mutable
 case class TrieWordCounter() {
   protected val rootNode: TrieWordCounter.TrieNode = TrieWordCounter.TrieNode()
 
+//  protected val garbToken = "[GARB:TOO_LONG]"
+  protected val maxWordLen = 100
+  protected var longWordSkipCount = 0
+  protected var maxRecordedWordLen = 0
+
+
+  def getLongWordSkipCount(): Int = longWordSkipCount
+
+  def getMaxRecordedWordLen(): Int = maxRecordedWordLen
+
+  def addFilterLongWords(word: String): Boolean = {
+    val wordLen = word.length()
+    if (wordLen > maxWordLen) {
+      longWordSkipCount += 1
+      if (wordLen > maxRecordedWordLen){
+//        System.out.println(s"Setting max word len to $maxWordLen; word: [$word]")
+        maxRecordedWordLen = wordLen
+      }
+    }
+    isWordTooLong(word)
+  }
+
+  def isWordTooLong(word: String): Boolean = {
+    val wordLen = word.length()
+    wordLen > maxWordLen
+  }
+
+
   protected var _totalCount: Long = { 0L }
 
   def insertWord(word: String): Long = {
     _totalCount += 1
+    val isTooLong = addFilterLongWords(word)
+    if (isTooLong)
+      return -1
     var currentNode = rootNode
     for (char <- word)
       currentNode = currentNode.child(char)
@@ -45,6 +76,9 @@ case class TrieWordCounter() {
   }
 
   def apply(word: String): Long = {
+    val isTooLong = isWordTooLong(word)
+    if (isTooLong)
+      return -1
     var currentNode = rootNode
     for (char <- word)
       currentNode = currentNode.child(char)

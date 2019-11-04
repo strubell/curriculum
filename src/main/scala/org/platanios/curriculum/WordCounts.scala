@@ -25,13 +25,16 @@ import scala.util.matching.Regex
 /**
   * @author Emmanouil Antonios Platanios
   */
-class WordCounts(val caseSensitive: Boolean = false) extends SummaryScore {
-  protected val whitespaceRegex: Regex = "\\s+".r
+class WordCounts(val caseSensitive: Boolean = false, val punctSensitive: Boolean = false) extends SummaryScore {
+  protected val whitespaceRegex: Regex = "\\p{Z}+".r
 
   protected var counter: TrieWordCounter = TrieWordCounter()
 
   override def name: String = {
-    if (caseSensitive) "cs-wc" else "wc"
+    var basename = "wc"
+    if (caseSensitive) basename = s"cs-$basename"
+    if (punctSensitive) basename = s"ps-$basename"
+    basename
   }
 
   override def processSentence(
@@ -40,11 +43,26 @@ class WordCounts(val caseSensitive: Boolean = false) extends SummaryScore {
     requiredSummaries: Seq[SummaryScore]
   ): Unit = {
     whitespaceRegex.split(sentence).foreach(word => {
-      if (caseSensitive)
-        counter.insertWord(word)
-      else
-        counter.insertWord(word.toLowerCase)
+      var cleanWord = word
+      if (!caseSensitive)
+        cleanWord = cleanWord.toLowerCase()
+
+      // Strip all punctuation, unless the string is only punctuation, in which case we leave it as is
+      if (!punctSensitive) {
+        val noPunct = cleanWord.replaceAll("""\p{Punct}""", "")
+        if (noPunct != "")
+          cleanWord = noPunct
+      }
+//      if (caseSensitive)
+//        counter.insertWord(word)
+//      else
+//        counter.insertWord(word.toLowerCase)
+      counter.insertWord(cleanWord)
     })
+  }
+
+  override def report() : String = {
+    s"$name report: skipped ${counter.getLongWordSkipCount()} words; max length: ${counter.getMaxRecordedWordLen()}"
   }
 
   override def resetState(): Unit = {
