@@ -124,15 +124,10 @@ object Score {
 
             // Update the summary score using all sentences.
             newReader(file).lines().toAutoClosedIterator.zipWithIndex.foreach( sentence => {
-              if (sentence._1.strip() != ""){
               summaryScore.processSentence(
                 sentence = sentence._1,
                 requiredValues = requiredSentenceScores.map(_.apply(sentence._2)),
                 requiredSummaries = requiredSummaryScores)
-              }
-              else {
-                None
-              }
             })
             logger.info(summaryScore.report())
           }
